@@ -17,7 +17,7 @@
 
 import { reactive } from 'vue'
 import { useAsyncState } from '@vueuse/core'
-import { viewGanttTree } from '@/service/modules/process-instances'
+import { viewGanttTree } from '@/service/modules/workflow-instances'
 import { IGanttRes } from './type'
 
 export function useGantt() {
@@ -32,10 +32,7 @@ export function useGantt() {
 
     variables.seriesData = obj.tasks.map((item) => {
       variables.taskList.push(item.taskName)
-      return {
-        name: item.taskName,
-        ...item
-      }
+      return item
     }) as any
   }
 

@@ -17,10 +17,10 @@
 
 package org.apache.dolphinscheduler.plugin.task.api.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.baomidou.mybatisplus.annotation.EnumValue;
 
 public enum TaskExecutionStatus {
 
@@ -38,12 +38,6 @@ public enum TaskExecutionStatus {
     ;
 
     private static final Map<Integer, TaskExecutionStatus> CODE_MAP = new HashMap<>();
-    private static final int[] NEED_FAILOVER_STATES = new int[]{
-            SUBMITTED_SUCCESS.getCode(),
-            DISPATCH.getCode(),
-            RUNNING_EXECUTION.getCode(),
-            DELAY_EXECUTION.getCode(),
-    };
 
     static {
         for (TaskExecutionStatus executionStatus : TaskExecutionStatus.values()) {
@@ -80,7 +74,7 @@ public enum TaskExecutionStatus {
     }
 
     public boolean isFailure() {
-        return this == TaskExecutionStatus.FAILURE;
+        return this == TaskExecutionStatus.FAILURE || this == NEED_FAULT_TOLERANCE;
     }
 
     public boolean isPause() {
@@ -88,15 +82,11 @@ public enum TaskExecutionStatus {
     }
 
     public boolean isFinished() {
-        return isSuccess() || isKill() || isFailure() || isPause();
+        return isSuccess() || isKill() || isFailure() || isPause() || isForceSuccess();
     }
 
     public boolean isNeedFaultTolerance() {
         return this == NEED_FAULT_TOLERANCE;
-    }
-
-    public static int[] getNeedFailoverWorkflowInstanceState() {
-        return NEED_FAILOVER_STATES;
     }
 
     public boolean shouldFailover() {
@@ -125,7 +115,7 @@ public enum TaskExecutionStatus {
 
     @Override
     public String toString() {
-        return "TaskExecutionStatus{" + "code=" + code + ", desc='" + desc + '\'' + '}';
+        return name();
     }
 
 }

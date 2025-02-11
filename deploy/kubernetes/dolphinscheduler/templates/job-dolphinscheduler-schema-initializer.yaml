@@ -14,12 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+{{- if and .Values.api.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "dolphinscheduler.fullname" . }}-db-init-job
   labels:
     {{- include "dolphinscheduler.common.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade,post-rollback
+    "helm.sh/hook-weight": "1"
 spec:
   template:
     metadata:
@@ -46,7 +50,7 @@ spec:
               value: {{ .Values.timezone }}
             {{- include "dolphinscheduler.database.env_vars" . | nindent 12 }}
             {{- include "dolphinscheduler.registry.env_vars" . | nindent 12 }}
-            {{- include "dolphinscheduler.fs_s3a.env_vars" . | nindent 12 }}
           envFrom:
             - configMapRef:
                 name: {{ include "dolphinscheduler.fullname" . }}-common
+{{- end }}

@@ -2,7 +2,7 @@
 
 Good documentation is critical for any type of software. Any contribution that can improve the DolphinScheduler documentation is welcome.
 
-###  Get the document project
+### Get the document project
 
 Documentation for the DolphinScheduler project is maintained in a separate [git repository](https://github.com/apache/dolphinscheduler-website).
 
@@ -22,7 +22,7 @@ Make sure that your node version is 10+, docsite does not yet support versions h
 
 1. Run `npm install` in the root directory to install the dependencies.
 
-2. Run commands to collect resources 2.1.Run `export PROTOCOL_MODE=ssh` tells Git clone resource via SSH protocol instead of HTTPS protocol. 2.2.Run `./scripts/prepare_docs.sh` prepare all related resources, for more information you could see [how prepare script work](https://github.com/apache/dolphinscheduler-website/blob/master/HOW_PREPARE_WOKR.md).
+2. Run commands to collect resources 2.1.Run `export PROTOCOL_MODE=ssh` tells Git clone resource via SSH protocol instead of HTTPS protocol. 2.2.Run `./scripts/prepare_docs.sh` prepare all related resources, for more information you could see [how prepare script work](https://github.com/apache/dolphinscheduler-website/blob/master/HOW_PREPARE_WORK.md).
 
 3. Run `npm run start` in the root directory to start a local server, you will see the website in 'http://localhost:8080'.
 
@@ -52,8 +52,8 @@ Now you can run and build the website in your local environment.
 
 2. Simply push the changed files, for example:
 
- * `*.md`
- * `blog.js or docs.js or site.js`
+* `*.md`
+* `blog.js or docs.js or site.js`
 
 3. Submit the Pull Request to the **master** branch.
 

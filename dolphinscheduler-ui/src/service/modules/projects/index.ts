@@ -16,11 +16,21 @@
  */
 
 import { axios } from '@/service/service'
-import { ListReq, ProjectsReq, UserIdReq, UpdateProjectsReq } from './types'
+import { ListReq, ListIdReq, ProjectsReq, UserIdReq } from './types'
 
 export function queryProjectListPaging(params: ListReq): any {
   return axios({
     url: '/projects',
+    method: 'get',
+    params
+  })
+}
+
+export function queryProjectWithAuthorizedLevelListPaging(
+  params: ListIdReq
+): any {
+  return axios({
+    url: '/projects/project-with-authorized-level-list-paging',
     method: 'get',
     params
   })
@@ -64,6 +74,14 @@ export function queryUnauthorizedProject(params: UserIdReq): any {
   })
 }
 
+export function queryProjectWithAuthorizedLevel(params: UserIdReq): any {
+  return axios({
+    url: '/projects/project-with-authorized-level',
+    method: 'get',
+    params
+  })
+}
+
 export function queryProjectByCode(code: number): any {
   return axios({
     url: `/projects/${code}`,
@@ -71,7 +89,7 @@ export function queryProjectByCode(code: number): any {
   })
 }
 
-export function updateProject(data: UpdateProjectsReq, code: number): any {
+export function updateProject(data: ProjectsReq, code: number): any {
   return axios({
     url: `/projects/${code}`,
     method: 'put',
@@ -83,5 +101,12 @@ export function deleteProject(code: number): any {
   return axios({
     url: `/projects/${code}`,
     method: 'delete'
+  })
+}
+
+export function queryAllProjectListForDependent(): any {
+  return axios({
+    url: '/projects/list-dependent',
+    method: 'get'
   })
 }
