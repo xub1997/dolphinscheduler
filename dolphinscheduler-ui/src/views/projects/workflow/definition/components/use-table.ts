@@ -22,7 +22,7 @@ import {
   deleteVersion,
   queryVersions,
   switchVersion
-} from '@/service/modules/process-definition'
+} from '@/service/modules/workflow-definition'
 import { DeleteOutlined, ExclamationCircleOutlined } from '@vicons/antd'
 import { NSpace, NTooltip, NButton, NPopconfirm, NTag } from 'naive-ui'
 import type { Router } from 'vue-router'
@@ -107,7 +107,7 @@ export function useTable(
                             {
                               circle: true,
                               type: 'info',
-                              size: 'tiny',
+                              size: 'small',
                               disabled: _row.version === variables.row.version
                             },
                             {
@@ -139,7 +139,7 @@ export function useTable(
                             {
                               circle: true,
                               type: 'error',
-                              size: 'tiny',
+                              size: 'small',
                               disabled: _row.version === variables.row.version
                             },
                             {

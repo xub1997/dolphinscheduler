@@ -50,28 +50,14 @@ export function useSwitch({
     timeoutNotifyStrategy: ['WARN']
   } as INodeData)
 
-  let extra: IJsonItem[] = []
-  if (from === 1) {
-    extra = [
-      Fields.useTaskType(model, readonly),
-      Fields.useProcessName({
-        model,
-        projectCode,
-        isCreate: !data?.id,
-        from,
-        processName: data?.processName
-      })
-    ]
-  }
-
   return {
     json: [
       Fields.useName(from),
-      ...extra,
+      ...Fields.useTaskDefinition({ projectCode, from, readonly, data, model }),
       Fields.useRunFlag(),
       Fields.useDescription(),
       Fields.useTaskPriority(),
-      Fields.useWorkerGroup(),
+      Fields.useWorkerGroup(projectCode),
       Fields.useEnvironmentName(model, !data?.id),
       ...Fields.useTaskGroup(model, projectCode),
       ...Fields.useFailed(),

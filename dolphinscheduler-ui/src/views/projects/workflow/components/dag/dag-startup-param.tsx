@@ -43,10 +43,7 @@ export default defineComponent({
 
     const getAlertGroupList = () => {
       listAlertGroupById().then((res: any) => {
-        alertGroupListRef.value = res.map((item: any) => ({
-          label: item.groupName,
-          value: item.id
-        }))
+        alertGroupListRef.value = res
       })
     }
 
@@ -83,7 +80,7 @@ export default defineComponent({
 
       const o = _.filter(alertGroupListRef.value, (v) => v.id === id)
       if (o && o.length) {
-        return o[0].code
+        return o[0].groupName
       }
       return '-'
     })
@@ -106,6 +103,7 @@ export default defineComponent({
   render() {
     const { t } = this
 
+    // @ts-ignore
     return (
       <div class={styles.box}>
         <ul class={styles['box-bd']}>
@@ -119,10 +117,9 @@ export default defineComponent({
             <span class={styles.tab}>
               {t('project.workflow.complement_range')}:
             </span>
-            {this.commandParam && this.commandParam.complementStartDate ? (
+            {this.commandParam && this.commandParam.backfillTimeList ? (
               <span class={styles.content}>
-                {this.commandParam.complementStartDate}-
-                {this.commandParam.complementEndDate}
+                {this.commandParam.backfillTimeList.join(',')}
               </span>
             ) : (
               '-'
@@ -143,7 +140,7 @@ export default defineComponent({
               {t('project.workflow.workflow_priority')}:
             </span>
             <span class={styles.content}>
-              {this.startupParam?.processInstancePriority}
+              {this.startupParam?.workflowInstancePriority}
             </span>
           </li>
           <li>
@@ -155,6 +152,10 @@ export default defineComponent({
                 ? this.startupParam?.workerGroup
                 : '-'}
             </span>
+          </li>
+          <li>
+            <span class={styles.tab}>{t('project.workflow.tenant_code')}:</span>
+            <span class={styles.content}>{this.startupParam?.tenantCode}</span>
           </li>
           <li>
             <span class={styles.tab}>

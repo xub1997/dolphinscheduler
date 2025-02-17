@@ -44,39 +44,27 @@ export function useSpark({
     delayTime: 0,
     timeout: 30,
     programType: 'SCALA',
-    sparkVersion: 'SPARK2',
     rawScript: '',
-    deployMode: 'local',
+    master: '',
+    deployMode: '',
     driverCores: 1,
     driverMemory: '512M',
     numExecutors: 2,
     executorMemory: '2G',
     executorCores: 2,
-    timeoutNotifyStrategy: ['WARN']
+    yarnQueue: '',
+    timeoutNotifyStrategy: ['WARN'],
+    sqlExecutionType: 'SCRIPT'
   } as INodeData)
-
-  let extra: IJsonItem[] = []
-  if (from === 1) {
-    extra = [
-      Fields.useTaskType(model, readonly),
-      Fields.useProcessName({
-        model,
-        projectCode,
-        isCreate: !data?.id,
-        from,
-        processName: data?.processName
-      })
-    ]
-  }
 
   return {
     json: [
       Fields.useName(from),
-      ...extra,
+      ...Fields.useTaskDefinition({ projectCode, from, readonly, data, model }),
       Fields.useRunFlag(),
       Fields.useDescription(),
       Fields.useTaskPriority(),
-      Fields.useWorkerGroup(),
+      Fields.useWorkerGroup(projectCode),
       Fields.useEnvironmentName(model, !data?.id),
       ...Fields.useTaskGroup(model, projectCode),
       ...Fields.useFailed(),

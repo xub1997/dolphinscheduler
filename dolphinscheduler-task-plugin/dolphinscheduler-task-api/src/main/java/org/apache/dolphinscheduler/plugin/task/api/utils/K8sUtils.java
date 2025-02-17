@@ -22,56 +22,50 @@ import static org.apache.dolphinscheduler.plugin.task.api.TaskConstants.LOG_LINE
 import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 
 import java.util.List;
-import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import lombok.extern.slf4j.Slf4j;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
-import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 
+@Slf4j
 public class K8sUtils {
-    private static final Logger log = LoggerFactory.getLogger(K8sUtils.class);
+
     private KubernetesClient client;
 
     public void createJob(String namespace, Job job) {
         try {
-            client.batch().v1()
-                .jobs()
-                .inNamespace(namespace)
-                .create(job);
+            client.batch()
+                    .v1()
+                    .jobs()
+                    .inNamespace(namespace)
+                    .create(job);
         } catch (Exception e) {
-            throw new TaskException("fail to create job",e);
+            throw new TaskException("fail to create job", e);
         }
     }
 
     public void deleteJob(String jobName, String namespace) {
         try {
-            client.batch().v1()
-                .jobs()
-                .inNamespace(namespace)
-                .withName(jobName)
-                .delete();
+            client.batch()
+                    .v1()
+                    .jobs()
+                    .inNamespace(namespace)
+                    .withName(jobName)
+                    .delete();
         } catch (Exception e) {
-            throw new TaskException("fail to delete job",e);
+            throw new TaskException("fail to delete job", e);
         }
     }
 
     public Boolean jobExist(String jobName, String namespace) {
-        Optional<Job> result;
         try {
-            JobList jobList = client.batch().v1().jobs().inNamespace(namespace).list();
-            List<Job> jobs = jobList.getItems();
-            result = jobs.stream()
-                .filter(job -> job.getMetadata().getName().equals(jobName))
-                .findFirst();
-            return result.isPresent();
+            Job job = client.batch().v1().jobs().inNamespace(namespace).withName(jobName).get();
+            return job != null;
         } catch (Exception e) {
             throw new TaskException("fail to check job: ", e);
         }
@@ -79,10 +73,13 @@ public class K8sUtils {
 
     public Watch createBatchJobWatcher(String jobName, Watcher<Job> watcher) {
         try {
-            return client.batch().v1()
-                .jobs().withName(jobName).watch(watcher);
+            return client.batch()
+                    .v1()
+                    .jobs()
+                    .withName(jobName)
+                    .watch(watcher);
         } catch (Exception e) {
-            throw new TaskException("fail to register batch job watcher",e);
+            throw new TaskException("fail to register batch job watcher", e);
         }
     }
 
@@ -92,14 +89,14 @@ public class K8sUtils {
             String podName = null;
             for (Pod pod : podList) {
                 podName = pod.getMetadata().getName();
-                if (jobName.equals(podName.substring(0, pod.getMetadata().getName().lastIndexOf("-")))) {
+                if (podName.contains("-") && jobName.equals(podName.substring(0, podName.lastIndexOf("-")))) {
                     break;
                 }
             }
             return client.pods().inNamespace(namespace)
-                .withName(podName)
-                .tailingLines(LOG_LINES)
-                .getLog(Boolean.TRUE);
+                    .withName(podName)
+                    .tailingLines(LOG_LINES)
+                    .getLog(Boolean.TRUE);
         } catch (Exception e) {
             log.error("fail to getPodLog", e);
             log.error("response bodies : {}", e.getMessage());
@@ -110,9 +107,9 @@ public class K8sUtils {
     public void buildClient(String configYaml) {
         try {
             Config config = Config.fromKubeconfig(configYaml);
-            client = new DefaultKubernetesClient(config);
+            client = new KubernetesClientBuilder().withConfig(config).build();
         } catch (Exception e) {
-            throw new TaskException("fail to build k8s ApiClient",e);
+            throw new TaskException("fail to build k8s ApiClient", e);
         }
     }
 

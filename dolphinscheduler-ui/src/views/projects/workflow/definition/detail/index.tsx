@@ -22,9 +22,9 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import Dag from '../../components/dag'
 import {
-  queryProcessDefinitionByCode,
-  updateProcessDefinition
-} from '@/service/modules/process-definition'
+  queryWorkflowDefinitionByCode,
+  updateWorkflowDefinition
+} from '@/service/modules/workflow-definition'
 import {
   WorkflowDefinition,
   SaveForm,
@@ -33,6 +33,7 @@ import {
   Location
 } from '../../components/dag/types'
 import Styles from './index.module.scss'
+import { useGraphAutoLayout } from '../../components/dag/use-graph-auto-layout'
 
 interface SaveData {
   saveForm: SaveForm
@@ -55,13 +56,21 @@ export default defineComponent({
     const definition = ref<WorkflowDefinition>()
     const readonly = ref(false)
     const isLoading = ref(true)
+    const dagRef = ref()
 
     const refresh = () => {
       isLoading.value = true
-      queryProcessDefinitionByCode(code, projectCode).then((res: any) => {
-        readonly.value = res.processDefinition.releaseState === 'ONLINE'
+      queryWorkflowDefinitionByCode(code, projectCode).then((res: any) => {
+        readonly.value = res.workflowDefinition.releaseState === 'ONLINE'
         definition.value = res
         isLoading.value = false
+        if (!res.workflowDefinition.locations) {
+          setTimeout(() => {
+            const graph = dagRef.value
+            const { submit } = useGraphAutoLayout({ graph })
+            submit()
+          }, 1000)
+        }
       })
     }
 
@@ -75,18 +84,17 @@ export default defineComponent({
         return {
           prop: p.key,
           value: p.value,
-          direct: 'IN',
-          type: 'VARCHAR'
+          direct: p.direct,
+          type: p.type
         }
       })
 
-      updateProcessDefinition(
+      updateWorkflowDefinition(
         {
           taskDefinitionJson: JSON.stringify(taskDefinitions),
           taskRelationJson: JSON.stringify(connects),
           locations: JSON.stringify(locations),
           name: saveForm.name,
-          tenantCode: saveForm.tenantCode,
           executionType: saveForm.executionType,
           description: saveForm.description,
           globalParams: JSON.stringify(globalParams),
@@ -115,6 +123,7 @@ export default defineComponent({
       >
         {!isLoading.value && (
           <Dag
+            ref={dagRef}
             definition={definition.value}
             onRefresh={refresh}
             projectCode={projectCode}

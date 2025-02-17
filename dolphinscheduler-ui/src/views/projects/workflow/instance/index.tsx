@@ -17,18 +17,19 @@
 
 import { defineComponent, onMounted, onUnmounted, toRefs, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Card from '@/components/card'
 import {
   NButton,
   NDataTable,
   NPagination,
   NPopconfirm,
-  NTooltip
+  NTooltip,
+  NSpace
 } from 'naive-ui'
 import { useTable } from './use-table'
-import ProcessInstanceCondition from './components/process-instance-condition'
-import { IWorkflowInstanceSearch } from './types'
-import styles from './index.module.scss'
+import Card from '@/components/card'
+import WorkflowInstanceCondition from './components/workflow-instance-condition'
+import type { IWorkflowInstanceSearch } from './types'
+import totalCount from '@/utils/tableTotalCount'
 
 export default defineComponent({
   name: 'WorkflowInstanceList',
@@ -42,6 +43,7 @@ export default defineComponent({
     }
 
     const handleSearch = (params: IWorkflowInstanceSearch) => {
+      variables.workflowDefinitionCode = params.workflowDefinitionCode
       variables.searchVal = params.searchVal
       variables.executorName = params.executorName
       variables.host = params.host
@@ -49,6 +51,7 @@ export default defineComponent({
       variables.startDate = params.startDate
       variables.endDate = params.endDate
       variables.page = 1
+
       requestData()
     }
 
@@ -92,60 +95,62 @@ export default defineComponent({
     const { loadingRef } = this
 
     return (
-      <div class={styles.content}>
-        <Card class={styles.card}>
-          <div class={styles.header}>
-            <ProcessInstanceCondition onHandleSearch={this.handleSearch} />
-          </div>
+      <NSpace vertical>
+        <Card>
+          <WorkflowInstanceCondition onHandleSearch={this.handleSearch} />
         </Card>
         <Card title={t('project.workflow.workflow_instance')}>
-          <NDataTable
-            loading={loadingRef}
-            rowKey={(row) => row.id}
-            columns={this.columns}
-            data={this.tableData}
-            striped
-            size={'small'}
-            class={styles.table}
-            scrollX={this.tableWidth}
-            v-model:checked-row-keys={this.checkedRowKeys}
-            row-class-name='items-workflow-instances'
-          />
-          <div class={styles.pagination}>
-            <NPagination
-              v-model:page={this.page}
-              v-model:page-size={this.pageSize}
-              page-count={this.totalPage}
-              show-size-picker
-              page-sizes={[10, 30, 50]}
-              show-quick-jumper
-              onUpdatePage={this.requestData}
-              onUpdatePageSize={this.handleChangePageSize}
+          <NSpace vertical>
+            <NDataTable
+              loading={loadingRef}
+              rowKey={(row) => row.id}
+              columns={this.columns}
+              data={this.tableData}
+              striped
+              size={'small'}
+              scrollX={this.tableWidth}
+              v-model:checked-row-keys={this.checkedRowKeys}
+              row-class-name='items-workflow-instances'
             />
-          </div>
+            <NSpace justify='center'>
+              <NPagination
+                v-model:page={this.page}
+                v-model:page-size={this.pageSize}
+                show-size-picker
+                page-sizes={[10, 30, 50]}
+                show-quick-jumper
+                onUpdatePage={this.requestData}
+                onUpdatePageSize={this.handleChangePageSize}
+                itemCount={this.totalCount}
+                prefix={totalCount}
+              />
+            </NSpace>
+          </NSpace>
           <NTooltip>
             {{
               default: () => t('project.workflow.delete'),
               trigger: () => (
-                <NButton
-                  tag='div'
-                  type='primary'
-                  disabled={this.checkedRowKeys.length <= 0}
-                  style='position: absolute; bottom: 10px; left: 10px;'
-                  class='btn-delete-all'
-                >
-                  <NPopconfirm onPositiveClick={this.handleBatchDelete}>
-                    {{
-                      default: () => t('project.workflow.delete_confirm'),
-                      trigger: () => t('project.workflow.delete')
-                    }}
-                  </NPopconfirm>
-                </NButton>
+                <NPopconfirm onPositiveClick={this.handleBatchDelete}>
+                  {{
+                    default: () => t('project.workflow.delete_confirm'),
+                    trigger: () => (
+                      <NButton
+                        tag='div'
+                        type='primary'
+                        disabled={this.checkedRowKeys.length <= 0}
+                        style='position: absolute; bottom: 10px; left: 10px;'
+                        class='btn-delete-all'
+                      >
+                        {t('project.workflow.delete')}
+                      </NButton>
+                    )
+                  }}
+                </NPopconfirm>
               )
             }}
           </NTooltip>
         </Card>
-      </div>
+      </NSpace>
     )
   }
 })

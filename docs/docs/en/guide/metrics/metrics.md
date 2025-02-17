@@ -3,13 +3,13 @@
 Apache DolphinScheduler exports metrics for system observability. We use [Micrometer](https://micrometer.io/) as application metrics facade.
 Currently, we only support `Prometheus Exporter` but more are coming soon.
 
-## Quick Start 
+## Quick Start
 
-- We enable Apache DolphinScheduler to export metrics in `standalone` mode to help users get hands dirty easily. 
+- We enable Apache DolphinScheduler to export metrics in `standalone` mode to help users get hands dirty easily.
 - After triggering tasks in `standalone` mode, you could access metrics list by visiting url `http://localhost:12345/dolphinscheduler/actuator/metrics`.
 - After triggering tasks in `standalone` mode, you could access `prometheus-format` metrics by visiting url `http://localhost:12345/dolphinscheduler/actuator/prometheus`.
 - For a better experience with `Prometheus` and `Grafana`, we have prepared the out-of-the-box `Grafana` configurations for you, you could find the `Grafana` dashboards
-at `dolphinscheduler-meter/resources/grafana` and directly import these dashboards to your `Grafana` instance.
+  at `dolphinscheduler-meter/resources/grafana` and directly import these dashboards to your `Grafana` instance.
 - If you want to try with `docker`, you can use the following command to start the out-of-the-box `Prometheus` and `Grafana`:
 
 ```shell
@@ -17,12 +17,12 @@ cd dolphinscheduler-meter/src/main/resources/grafana-demo
 docker compose up
 ```
 
-then access the `Grafana` by the url: `http://localhost/3001` for dashboards.    
+then access the `Grafana` by the url: `http://localhost:3001` for dashboards.
 
 ![image.png](../../../../img/metrics/metrics-master.png)
 ![image.png](../../../../img/metrics/metrics-worker.png)
 ![image.png](../../../../img/metrics/metrics-datasource.png)
-      
+
 - If you prefer to have some experiments in `cluster` mode, please refer to the [Configuration](#configuration) section below:
 
 ## Configuration
@@ -48,7 +48,7 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 ### Prometheus
 
 - all dots mapped to underscores
-- metric name starting with number added with prefix `m_` 
+- metric name starting with number added with prefix `m_`
 - COUNTER: add `_total` suffix if not ending with it
 - LONG_TASK_TIMER: `_timer_seconds` suffix added if not ending with them
 - GAUGE: `_baseUnit` suffix added if not ending with it
@@ -56,7 +56,7 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 ## Dolphin Scheduler Metrics Cheatsheet
 
 - We categorize metrics by dolphin scheduler components such as `master server`, `worker server`, `api server` and `alert server`.
-- Although task / workflow related metrics exported by `master server` and `worker server`, we categorize them separately for users to query them more conveniently.  
+- Although task / workflow related metrics exported by `master server` and `worker server`, we categorize them separately for users to query them more conveniently.
 
 ### Task Related Metrics
 
@@ -66,36 +66,40 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
   - success: the number of successful tasks
   - fail: the number of failed tasks
   - stop: the number of stopped tasks
-  - retry: the number of retried tasks 
+  - retry: the number of retried tasks
   - submit: the number of submitted tasks
   - failover: the number of task fail-overs
 - ds.task.dispatch.count: (counter) the number of tasks dispatched to worker
 - ds.task.dispatch.failure.count: (counter) the number of tasks failed to dispatch, retry failure included
 - ds.task.dispatch.error.count: (counter) the number of task dispatch errors
 - ds.task.execution.count.by.type: (counter) the number of task executions grouped by tag `task_type`
-- ds.task.running: (gauge) the number of running tasks 
-- ds.task.prepared: (gauge) the number of tasks prepared for task queue 
-- ds.task.execution.count: (counter) the number of executed tasks  
+- ds.task.prepared: (gauge) the number of tasks prepared for task queue
+- ds.task.execution.count: (counter) the number of executed tasks
 - ds.task.execution.duration: (histogram) duration of task executions
-
 
 ### Workflow Related Metrics
 
 - ds.workflow.create.command.count: (counter) the number of commands created and inserted by workflows
 - ds.workflow.instance.submit.count: (counter) the number of submitted workflow instances
 - ds.workflow.instance.running: (gauge) the number of running workflow instances
-- ds.workflow.instance.count: (counter) the number of workflow instances, sliced by the tag `state`:
+- ds.workflow.instance.count: (counter) the number of workflow instances, sliced by tags `process.definition.code` and `state`. To monitor a specific workflow, you could filter the metrics by tag `process.definition.code`, which refers to the definition code of your workflow. There are seven different states for workflow instances as follows:
+  - submit: the number of submitted workflow instances
   - timeout: the number of timeout workflow instances
   - finish: the number of finished workflow instances, both successes and failures included
   - success: the number of successful workflow instances
-  - fail: the number of failed workflow instances 
-  - stop: the number of stopped workflow instances 
+  - fail: the number of failed workflow instances
+  - stop: the number of stopped workflow instances
   - failover: the number of workflow instance fail-overs
+
+### RPC Related Metrics
+
+- ds.rpc.client.sync.request.exception.count: (counter) the number of exceptions occurred in sync rpc requests
+- ds.rpc.client.sync.request.duration.time: (histogram) the time cost of sync rpc requests
 
 ### Master Server Metrics
 
 - ds.master.overload.count: (counter) the number of times the master overloaded
-- ds.master.consume.command.count: (counter) the number of commands consumed by master 
+- ds.master.consume.command.count: (counter) the number of commands consumed by master
 - ds.master.scheduler.failover.check.count: (counter) the number of scheduler (master) fail-over checks
 - ds.master.scheduler.failover.check.time: (histogram) the total time cost of scheduler (master) fail-over checks
 - ds.master.quartz.job.executed: the total number of quartz jobs executed
@@ -104,6 +108,12 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 ### Worker Server Metrics
 
 - ds.worker.overload.count: (counter) the number of times the worker overloaded
+- ds.worker.task: (gauge) the number of tasks on the worker, including pending and running ones
+- ds.worker.execute.queue.size: (gauge) the number of pending tasks on the worker
+- ds.worker.active.execute.thread: (gauge) the number of running tasks on the worker
+- ds.worker.memory.available: (gauge) the available physical memory of the worker (GB)
+- ds.worker.cpu.usage: (gauge) the cpu usage percentage of the worker
+- ds.worker.memory.usage: (gauge) the memory usage percentage of the worker
 - ds.worker.full.submit.queue.count: (counter) the number of times the worker's submit queue being full
 - ds.worker.resource.download.count: (counter) the number of downloaded resource files on workers, sliced by tag `status`
 - ds.worker.resource.download.duration: (histogram) the time cost of resource download on workers
@@ -111,7 +121,11 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 
 ### Api Server Metrics
 
-- Currently, we have not embedded any metrics in Api Server. 
+- ds.api.request.count: (counter) the number of requests received by the api server
+- ds.api.response.count: (counter) the number of responses received by the api server, sliced by tag `code`
+- ds.api.response.time: (timer) the response time distribution of the api server, sliced by tag `user_id`
+- ds.api.resource.upload.size: (histogram) size distribution of resource files uploaded by the api server (bytes)
+- ds.api.resource.download.size: (histogram) size distribution of resource files download by the api server (bytes)
 
 ### Alert Server Related
 
@@ -124,7 +138,7 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 
 - hikaricp.connections: the total number of connections
 - hikaricp.connections.creation: connection creation time (max, count, sum included)
-- hikaricp.connections.acquire: connection acquirement time (max, count, sum included) 
+- hikaricp.connections.acquire: connection acquirement time (max, count, sum included)
 - hikaricp.connections.usage: connection usage time (max, count, sum included)
 - hikaricp.connections.max: the max number of connections
 - hikaricp.connections.min: the min number of connections
@@ -175,3 +189,4 @@ For example, you can get the master metrics by `curl http://localhost:5679/actua
 - system.load.average.1m: the total number of runnable entities queued to available processors and runnable entities running on the available processors averaged over a period
 - logback.events: the number of events that made it to the logs grouped by the tag `level`
 - http.server.requests: total number of http requests
+

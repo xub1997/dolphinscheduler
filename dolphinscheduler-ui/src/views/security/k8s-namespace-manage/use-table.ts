@@ -20,7 +20,7 @@ import { reactive, h, ref } from 'vue'
 import { NButton, NIcon, NPopconfirm, NSpace, NTooltip } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { format } from 'date-fns'
-import { DeleteOutlined, EditOutlined } from '@vicons/antd'
+import { DeleteOutlined } from '@vicons/antd'
 import {
   queryNamespaceListPaging,
   delNamespaceById
@@ -39,20 +39,14 @@ import {
 export function useTable() {
   const { t } = useI18n()
 
-  const handleEdit = (row: NamespaceItem) => {
-    variables.showModalRef = true
-    variables.statusRef = 1
-    variables.row = row
-  }
-
   const handleDelete = (row: NamespaceItem) => {
     delNamespaceById(row.id).then(() => {
       getTableData({
         pageSize: variables.pageSize,
         pageNo:
-            variables.tableData.length === 1 && variables.page > 1
-                ? variables.page - 1
-                : variables.page,
+          variables.tableData.length === 1 && variables.page > 1
+            ? variables.page - 1
+            : variables.page,
         searchVal: variables.searchVal
       })
     })
@@ -77,16 +71,6 @@ export function useTable() {
         ...COLUMN_WIDTH_CONFIG['name']
       },
       {
-        title: t('security.k8s_namespace.limit_cpu'),
-        key: 'limitsCpu',
-        width: 140
-      },
-      {
-        title: t('security.k8s_namespace.limit_memory'),
-        key: 'limitsMemory',
-        width: 140
-      },
-      {
         title: t('security.k8s_namespace.create_time'),
         key: 'createTime',
         ...COLUMN_WIDTH_CONFIG['time']
@@ -104,61 +88,38 @@ export function useTable() {
           return h(NSpace, null, {
             default: () => [
               h(
-                  NTooltip,
-                  {},
-                  {
-                    trigger: () =>
-                        h(
+                NPopconfirm,
+                {
+                  onPositiveClick: () => {
+                    handleDelete(row)
+                  }
+                },
+                {
+                  trigger: () =>
+                    h(
+                      NTooltip,
+                      {},
+                      {
+                        trigger: () =>
+                          h(
                             NButton,
                             {
                               circle: true,
-                              type: 'info',
-                              size: 'small',
-                              onClick: () => {
-                                handleEdit(row)
-                              }
+                              type: 'error',
+                              size: 'small'
                             },
                             {
                               icon: () =>
-                                  h(NIcon, null, { default: () => h(EditOutlined) })
+                                h(NIcon, null, {
+                                  default: () => h(DeleteOutlined)
+                                })
                             }
-                        ),
-                    default: () => t('security.k8s_namespace.edit')
-                  }
-              ),
-              h(
-                  NPopconfirm,
-                  {
-                    onPositiveClick: () => {
-                      handleDelete(row)
-                    }
-                  },
-                  {
-                    trigger: () =>
-                        h(
-                            NTooltip,
-                            {},
-                            {
-                              trigger: () =>
-                                  h(
-                                      NButton,
-                                      {
-                                        circle: true,
-                                        type: 'error',
-                                        size: 'small'
-                                      },
-                                      {
-                                        icon: () =>
-                                            h(NIcon, null, {
-                                              default: () => h(DeleteOutlined)
-                                            })
-                                      }
-                                  ),
-                              default: () => t('security.k8s_namespace.delete')
-                            }
-                        ),
-                    default: () => t('security.k8s_namespace.delete_confirm')
-                  }
+                          ),
+                        default: () => t('security.k8s_namespace.delete')
+                      }
+                    ),
+                  default: () => t('security.k8s_namespace.delete_confirm')
+                }
               )
             ]
           })
@@ -188,24 +149,24 @@ export function useTable() {
     if (variables.loadingRef) return
     variables.loadingRef = true
     const { state } = useAsyncState(
-        queryNamespaceListPaging({ ...params }).then((res: NamespaceListRes) => {
-          variables.tableData = res.totalList.map((item, unused) => {
-            item.createTime = format(
-                parseTime(item.createTime),
-                'yyyy-MM-dd HH:mm:ss'
-            )
-            item.updateTime = format(
-                parseTime(item.updateTime),
-                'yyyy-MM-dd HH:mm:ss'
-            )
-            return {
-              ...item
-            }
-          }) as any
-          variables.totalPage = res.totalPage
-          variables.loadingRef = false
-        }),
-        {}
+      queryNamespaceListPaging({ ...params }).then((res: NamespaceListRes) => {
+        variables.tableData = res.totalList.map((item, unused) => {
+          item.createTime = format(
+            parseTime(item.createTime),
+            'yyyy-MM-dd HH:mm:ss'
+          )
+          item.updateTime = format(
+            parseTime(item.updateTime),
+            'yyyy-MM-dd HH:mm:ss'
+          )
+          return {
+            ...item
+          }
+        }) as any
+        variables.totalPage = res.totalPage
+        variables.loadingRef = false
+      }),
+      {}
     )
 
     return state

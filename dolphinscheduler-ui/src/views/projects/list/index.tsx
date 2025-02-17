@@ -16,19 +16,21 @@
  */
 
 import { SearchOutlined } from '@vicons/antd'
+import { NButton, NDataTable, NIcon, NPagination, NSpace } from 'naive-ui'
 import {
-  NButton,
-  NDataTable,
-  NIcon,
-  NInput,
-  NPagination,
-  NSpace
-} from 'naive-ui'
-import { defineComponent, getCurrentInstance, onMounted, toRefs, watch } from 'vue'
+  defineComponent,
+  getCurrentInstance,
+  onMounted,
+  toRefs,
+  watch
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTable } from './use-table'
 import Card from '@/components/card'
+import Search from '@/components/input-search'
 import ProjectModal from './components/project-modal'
+import WorkerGroupModal from '@/views/projects/list/components/worker-group-modal'
+import totalCount from '@/utils/tableTotalCount'
 
 const list = defineComponent({
   name: 'list',
@@ -54,12 +56,29 @@ const list = defineComponent({
       requestData()
     }
 
+    const onClearSearch = () => {
+      variables.page = 1
+      getTableData({
+        pageSize: variables.pageSize,
+        pageNo: variables.page
+      })
+    }
+
     const onCancelModal = () => {
       variables.showModalRef = false
     }
 
     const onConfirmModal = () => {
       variables.showModalRef = false
+      requestData()
+    }
+
+    const onCancelWorkerGroupModal = () => {
+      variables.showWorkerGroupModalRef = false
+    }
+
+    const onConfirmWorkerGroupModal = () => {
+      variables.showWorkerGroupModalRef = false
       requestData()
     }
 
@@ -87,6 +106,9 @@ const list = defineComponent({
       handleSearch,
       onCancelModal,
       onConfirmModal,
+      onCancelWorkerGroupModal,
+      onConfirmWorkerGroupModal,
+      onClearSearch,
       handleChangePageSize,
       trim
     }
@@ -106,13 +128,13 @@ const list = defineComponent({
               {t('project.list.create_project')}
             </NButton>
             <NSpace>
-              <NInput
-                allowInput={this.trim}
-                size='small'
-                v-model={[this.searchVal, 'value']}
+              <Search
+                v-model:value={this.searchVal}
                 placeholder={t('project.list.project_tips')}
-                clearable
+                onSearch={this.handleSearch}
+                onClear={this.onClearSearch}
               />
+
               <NButton size='small' type='primary' onClick={this.handleSearch}>
                 <NIcon>
                   <SearchOutlined />
@@ -134,12 +156,13 @@ const list = defineComponent({
               <NPagination
                 v-model:page={this.page}
                 v-model:page-size={this.pageSize}
-                page-count={this.totalPage}
                 show-size-picker
                 page-sizes={[10, 30, 50]}
                 show-quick-jumper
                 onUpdatePage={this.requestData}
                 onUpdatePageSize={this.handleChangePageSize}
+                itemCount={this.totalCount}
+                prefix={totalCount}
               />
             </NSpace>
           </NSpace>
@@ -150,6 +173,12 @@ const list = defineComponent({
           row={this.row}
           onCancelModal={this.onCancelModal}
           onConfirmModal={this.onConfirmModal}
+        />
+        <WorkerGroupModal
+          showModalRef={this.showWorkerGroupModalRef}
+          row={this.row}
+          onCancelModal={this.onCancelWorkerGroupModal}
+          onConfirmModal={this.onConfirmWorkerGroupModal}
         />
       </NSpace>
     )

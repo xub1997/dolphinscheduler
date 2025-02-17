@@ -17,8 +17,9 @@
 
 package org.apache.dolphinscheduler.service.cron;
 
-import static org.apache.dolphinscheduler.common.Constants.CMDPARAM_COMPLEMENT_DATA_SCHEDULE_DATE_LIST;
-import static org.apache.dolphinscheduler.common.Constants.COMMA;
+import static com.cronutils.model.CronType.QUARTZ;
+import static org.apache.dolphinscheduler.common.constants.CommandKeyConstants.CMD_PARAM_COMPLEMENT_DATA_SCHEDULE_DATE_LIST;
+import static org.apache.dolphinscheduler.common.constants.Constants.COMMA;
 import static org.apache.dolphinscheduler.service.cron.CycleFactory.day;
 import static org.apache.dolphinscheduler.service.cron.CycleFactory.hour;
 import static org.apache.dolphinscheduler.service.cron.CycleFactory.min;
@@ -26,17 +27,15 @@ import static org.apache.dolphinscheduler.service.cron.CycleFactory.month;
 import static org.apache.dolphinscheduler.service.cron.CycleFactory.week;
 import static org.apache.dolphinscheduler.service.cron.CycleFactory.year;
 
-import static com.cronutils.model.CronType.QUARTZ;
-
-import org.apache.dolphinscheduler.common.Constants;
+import org.apache.dolphinscheduler.common.constants.Constants;
 import org.apache.dolphinscheduler.common.enums.CycleEnum;
-import org.apache.dolphinscheduler.common.thread.Stopper;
+import org.apache.dolphinscheduler.common.lifecycle.ServerLifeCycleManager;
 import org.apache.dolphinscheduler.common.utils.DateUtils;
 import org.apache.dolphinscheduler.dao.entity.Schedule;
 import org.apache.dolphinscheduler.service.exceptions.CronParseException;
-import org.apache.dolphinscheduler.spi.utils.StringUtils;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -49,29 +48,27 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 
-import lombok.NonNull;
-
 /**
  * // todo: this utils is heavy, it rely on quartz and corn-utils.
  * cron utils
  */
+@Slf4j
 public class CronUtils {
+
     private CronUtils() {
         throw new IllegalStateException("CronUtils class");
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(CronUtils.class);
-
-
-    private static final CronParser QUARTZ_CRON_PARSER = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
+    private static final CronParser QUARTZ_CRON_PARSER =
+            new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ));
 
     /**
      * parse to cron
@@ -82,9 +79,27 @@ public class CronUtils {
     public static Cron parse2Cron(String cronExpression) throws CronParseException {
         try {
             return QUARTZ_CRON_PARSER.parse(cronExpression);
-        } catch (Exception ex) {
+        } catch (IllegalArgumentException ex) {
             throw new CronParseException(String.format("Parse corn expression: [%s] error", cronExpression), ex);
         }
+    }
+
+    /**
+     * Indicates whether the specified cron expression can be parsed into a
+     * valid cron expression
+     *
+     * @param cronExpression the expression to evaluate
+     * @return a boolean indicating whether the given expression is a valid cron
+     *         expression
+     */
+    public static boolean isValidExpression(String cronExpression) {
+        try {
+            parse2Cron(cronExpression);
+        } catch (CronParseException e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -94,7 +109,8 @@ public class CronUtils {
      * @return CycleEnum
      */
     public static CycleEnum getMaxCycle(Cron cron) {
-        return min(cron).addCycle(hour(cron)).addCycle(day(cron)).addCycle(week(cron)).addCycle(month(cron)).addCycle(year(cron)).getCycle();
+        return min(cron).addCycle(hour(cron)).addCycle(day(cron)).addCycle(week(cron)).addCycle(month(cron))
+                .addCycle(year(cron)).getCycle();
     }
 
     /**
@@ -105,11 +121,11 @@ public class CronUtils {
      */
     public static CycleEnum getMiniCycle(Cron cron) {
         return min(cron).addCycle(hour(cron))
-            .addCycle(day(cron))
-            .addCycle(week(cron))
-            .addCycle(month(cron))
-            .addCycle(year(cron))
-            .getMiniCycle();
+                .addCycle(day(cron))
+                .addCycle(week(cron))
+                .addCycle(month(cron))
+                .addCycle(year(cron))
+                .getMiniCycle();
     }
 
     /**
@@ -125,7 +141,6 @@ public class CronUtils {
             throw new RuntimeException("Get max cycle error", ex);
         }
     }
-
 
     public static List<ZonedDateTime> getFireDateList(@NonNull ZonedDateTime startTime,
                                                       @NonNull ZonedDateTime endTime,
@@ -147,7 +162,7 @@ public class CronUtils {
         List<ZonedDateTime> dateList = new ArrayList<>();
         ExecutionTime executionTime = ExecutionTime.forCron(cron);
 
-        while (Stopper.isRunning()) {
+        while (!ServerLifeCycleManager.isStopped()) {
             Optional<ZonedDateTime> nextExecutionTimeOptional = executionTime.nextExecution(startTime);
             if (!nextExecutionTimeOptional.isPresent()) {
                 break;
@@ -198,8 +213,8 @@ public class CronUtils {
         ZonedDateTime zonedDateTimeEnd = ZonedDateTime.ofInstant(endTime.toInstant(), ZoneId.systemDefault());
 
         return getSelfFireDateList(zonedDateTimeStart, zonedDateTimeEnd, schedules).stream()
-            .map(zonedDateTime -> new Date(zonedDateTime.toInstant().toEpochMilli()))
-            .collect(Collectors.toList());
+                .map(zonedDateTime -> new Date(zonedDateTime.toInstant().toEpochMilli()))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -208,8 +223,7 @@ public class CronUtils {
      */
     public static List<ZonedDateTime> getSelfFireDateList(@NonNull final ZonedDateTime startTime,
                                                           @NonNull final ZonedDateTime endTime,
-                                                          @NonNull final List<Schedule> schedules)
-        throws CronParseException {
+                                                          @NonNull final List<Schedule> schedules) throws CronParseException {
         List<ZonedDateTime> result = new ArrayList<>();
         if (startTime.equals(endTime)) {
             result.add(startTime);
@@ -262,12 +276,12 @@ public class CronUtils {
                     calendar.add(Calendar.DATE, 1);
                     break;
                 default:
-                    logger.error("Dependent process definition's  cycleEnum is {},not support!!", cycleEnum);
+                    log.error("Dependent workflow definition's cycleEnum is {}, not supported!", cycleEnum);
                     break;
             }
             maxExpirationTime = calendar.getTime();
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return DateUtils.compare(startTimeMax, maxExpirationTime) ? maxExpirationTime : startTimeMax;
     }
@@ -295,7 +309,7 @@ public class CronUtils {
      */
     public static List<Date> getSelfScheduleDateList(Map<String, String> param) {
         List<Date> result = new ArrayList<>();
-        String scheduleDates = param.get(CMDPARAM_COMPLEMENT_DATA_SCHEDULE_DATE_LIST);
+        String scheduleDates = param.get(CMD_PARAM_COMPLEMENT_DATA_SCHEDULE_DATE_LIST);
         if (StringUtils.isNotEmpty(scheduleDates)) {
             for (String stringDate : scheduleDates.split(COMMA)) {
                 result.add(DateUtils.stringToDate(stringDate.trim()));

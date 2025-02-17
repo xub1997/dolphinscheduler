@@ -20,9 +20,11 @@ package org.apache.dolphinscheduler.plugin.task.datax;
 import org.apache.dolphinscheduler.spi.enums.DbType;
 
 import com.alibaba.druid.sql.dialect.clickhouse.parser.ClickhouseStatementParser;
+import com.alibaba.druid.sql.dialect.hive.parser.HiveStatementParser;
 import com.alibaba.druid.sql.dialect.mysql.parser.MySqlStatementParser;
 import com.alibaba.druid.sql.dialect.oracle.parser.OracleStatementParser;
 import com.alibaba.druid.sql.dialect.postgresql.parser.PGSQLStatementParser;
+import com.alibaba.druid.sql.dialect.presto.parser.PrestoStatementParser;
 import com.alibaba.druid.sql.dialect.sqlserver.parser.SQLServerStatementParser;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 
@@ -38,6 +40,10 @@ public class DataxUtils {
 
     public static final String DATAX_READER_PLUGIN_CLICKHOUSE = "clickhousereader";
 
+    public static final String DATAX_READER_PLUGIN_RDBMS = "rdbmsreader";
+
+    public static final String DATAX_READER_PLUGIN_OCEANBASE = "oceanbasev10reader";
+
     public static final String DATAX_WRITER_PLUGIN_MYSQL = "mysqlwriter";
 
     public static final String DATAX_WRITER_PLUGIN_POSTGRESQL = "postgresqlwriter";
@@ -47,6 +53,11 @@ public class DataxUtils {
     public static final String DATAX_WRITER_PLUGIN_SQLSERVER = "sqlserverwriter";
 
     public static final String DATAX_WRITER_PLUGIN_CLICKHOUSE = "clickhousewriter";
+    public static final String DATAX_WRITER_PLUGIN_DATABEND = "databendwriter";
+
+    public static final String DATAX_WRITER_PLUGIN_RDBMS = "rdbmswriter";
+
+    public static final String DATAX_WRITER_PLUGIN_OCEANBASE = "oceanbasev10writer";
 
     public static String getReaderPluginName(DbType dbType) {
         switch (dbType) {
@@ -60,8 +71,12 @@ public class DataxUtils {
                 return DATAX_READER_PLUGIN_SQLSERVER;
             case CLICKHOUSE:
                 return DATAX_READER_PLUGIN_CLICKHOUSE;
+            case OCEANBASE:
+                return DATAX_READER_PLUGIN_OCEANBASE;
+            case HIVE:
+            case PRESTO:
             default:
-                return null;
+                return DATAX_READER_PLUGIN_RDBMS;
         }
     }
 
@@ -77,8 +92,14 @@ public class DataxUtils {
                 return DATAX_WRITER_PLUGIN_SQLSERVER;
             case CLICKHOUSE:
                 return DATAX_WRITER_PLUGIN_CLICKHOUSE;
+            case DATABEND:
+                return DATAX_WRITER_PLUGIN_DATABEND;
+            case OCEANBASE:
+                return DATAX_WRITER_PLUGIN_OCEANBASE;
+            case HIVE:
+            case PRESTO:
             default:
-                return null;
+                return DATAX_WRITER_PLUGIN_RDBMS;
         }
     }
 
@@ -94,9 +115,20 @@ public class DataxUtils {
                 return new SQLServerStatementParser(sql);
             case CLICKHOUSE:
                 return new ClickhouseStatementParser(sql);
+            case HIVE:
+                return new HiveStatementParser(sql);
+            case PRESTO:
+                return new PrestoStatementParser(sql);
             default:
                 return null;
         }
+    }
+
+    public static SQLStatementParser getSqlStatementParser(String compatibleMode, String sql) {
+        if (compatibleMode.toLowerCase().equals(DbType.ORACLE.getName())) {
+            return new OracleStatementParser(sql);
+        }
+        return new MySqlStatementParser(sql);
     }
 
     public static String[] convertKeywordsColumns(DbType dbType, String[] columns) {
@@ -130,6 +162,12 @@ public class DataxUtils {
             case ORACLE:
                 return String.format("\"%s\"", column);
             case SQLSERVER:
+                return String.format("\"%s\"", column);
+            case CLICKHOUSE:
+                return String.format("`%s`", column);
+            case DATABEND:
+                return String.format("`%s`", column);
+            case OCEANBASE:
                 return String.format("`%s`", column);
             default:
                 return column;
